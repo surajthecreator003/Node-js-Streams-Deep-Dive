@@ -76,6 +76,116 @@
 
 
 //now we will use Streams+Buffer to spped the process much more faster
+// const fs=require("node:fs/promises");
+// (async()=>{
+
+//     console.time("benchmark with stream");
+
+//     const openfile=await fs.open("test.txt","w");
+
+//     const stream=openfile.createWriteStream();
+
+
+    
+
+//     for(let i=1;i<1000000;i++){
+
+        
+//         // await openfile.write(buff);
+//         stream.write(` ${i}`)
+
+//     }
+
+
+//     console.timeEnd("benchmark with stream");
+
+// })()
+//is 10 times faster with 288ms time and using a ram of 200   MB
+
+
+
+
+//Now we will fix our Stream Code for less Memory Usage
+// const fs=require("node:fs/promises");
+// (async()=>{
+
+//     console.time("benchmark with stream");
+
+//     const openfile=await fs.open("test.txt","w");
+
+//     const stream=openfile.createWriteStream();
+
+//     console.log(stream.writableHighWaterMark);
+//     console.log(stream.writableLength);
+
+//     stream.write("heyyy");
+
+//     console.log(stream.writableLength);
+
+
+    
+
+//     for(let i=1;i<1000000;i++){
+
+        
+//         // await openfile.write(buff);
+//         stream.write(` ${i}`)
+
+//     }
+
+
+//     console.timeEnd("benchmark with stream");
+
+// })()
+
+
+// const fs=require("node:fs/promises");
+// (async()=>{
+
+//     console.time("benchmark with stream");
+
+//     const openfile=await fs.open("test.txt","w");
+
+//     const stream=openfile.createWriteStream();
+
+//     //8 bits=1byte
+//     //1000 bytes=1kb
+//     //1000 kb=1mb
+
+//     console.log(stream.writableLength);
+
+//     const buff=Buffer.alloc(16383,10);
+//     console.log(buff);
+//     console.log(stream.write(buff));
+//     console.log(stream.writableLength);
+
+//     console.log(stream.write(Buffer.alloc(1,"a")));
+//     console.log(stream.writableLength);
+
+//     console.log(stream.write(Buffer.alloc(1,"a")));
+//     console.log(stream.writableLength);
+
+    
+
+//     stream.on("drain",()=>{console.log("ready to drain the internal buffer");
+//                            console.log(stream.write(Buffer.alloc(1,"a")))});
+    
+   
+
+//     // setInterval(()=>{},1000)
+    
+
+//     console.timeEnd("benchmark with stream");
+
+//     // openfile.close()
+
+// })()
+
+
+
+
+//now will add drain function
+//this code is like the mechanism of stream
 const fs=require("node:fs/promises");
 (async()=>{
 
@@ -85,19 +195,37 @@ const fs=require("node:fs/promises");
 
     const stream=openfile.createWriteStream();
 
+    let i=0;
+    const writeMany=()=>{
+        while(i<1000000){
+                    const buff=Buffer.from(` ${i} `,"utf-8");
 
-    
+                    if(i===999999){
+                       return stream.end(buff)
+                    }
 
-    for(let i=1;i<1000000;i++){
+                    if(!stream.write(buff)){
+                        break;
+                    }
 
-        
-        // await openfile.write(buff);
-        stream.write(` ${i}`)
+                i++;
 
+            }
     }
 
+    writeMany();
 
-    console.timeEnd("benchmark with stream");
+    stream.on("drain",()=>{writeMany();console.log("Draining")})
+
+    // setInterval(()=>{},1000)
+    
+    stream.on("finish",()=>{
+        console.timeEnd("benchmark with stream");
+        openfile.close();
+    })
+
+    stream.on("close",()=>{console.log("closed")})
+
+    // openfile.close()
 
 })()
-//is 10 times faster with 288ms time and using a ram of 200   MB
