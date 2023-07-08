@@ -8,6 +8,8 @@ const fs=require("node:fs/promises");
 //     stream.on("data",(chunk)=>{console.log(chunk)})
 // })()
 
+
+//handling back pressure
 (async()=>{
 
     const fileHandleRead=await fs.open("test.txt","r");
@@ -17,7 +19,14 @@ const fs=require("node:fs/promises");
     const streamWrite=fileHandleWrite.createWriteStream();
 
     streamRead.on("data",(chunk)=>{
-        streamWrite.write(chunk)
+        if(!streamWrite.write(chunk)){
+            streamRead.pause();
+        }
+
+    })
+
+    streamWrite.on("drain",()=>{
+        streamRead.resume();
 
     })
 
